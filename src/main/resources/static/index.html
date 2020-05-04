@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Books</title>
+    <!--  Bootstrap  -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <!--  Axios  -->
+    <script type="text/javascript" src="js/axios.min.js"></script>
+    <!--  Vue  -->
+    <script type="text/javascript" src="js/vue.js"></script>
+</head>
+<body>
+<div id="app" class="container">
+    <title-card
+            :class="pageClass('main')"
+            @add-activity="addActivity()"
+            @select-all="selectAll()"
+            @select="select($event)"
+    ></title-card>
+    <activity-table
+            :class="pageClass('main')"
+            :activities="activities"
+            @edit-activity="editActivityById($event)"
+            @delete-activity="deleteActivityById($event)"
+    ></activity-table>
+    <activity-form
+            :class="pageClass('activity')"
+            :activity="editing"
+            @update-activity="updateActivity($event)"
+            @back="back"
+    ></activity-form>
+</div>
+</body>
+<script type="text/javascript">
+    Vue.component('title-card', {
+        template: `
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Activities</h5>
+                    <a
+                        type="button"
+                        class="btn btn-primary"
+                        href=""
+                        @click.prevent="$emit('add-activity')"
+                    >
+                        Add an Activity
+                    </a>
+                    <br/><br/>
+                    <a
+                        type="button"
+                        class="btn btn-primary"
+                        href=""
+                        @click.prevent="$emit('select-all')"
+                    >
+                        Show All
+                    </a>
+                    <br/><br/>
+                    <a
+                        type="button"
+                        class="btn btn-primary"
+                        href=""
+                        @click.prevent="select()"
+                    >
+                        Show Between:
+                    </a>
+                    <label for="startDate">Start Date:</label>
+                    <input
+                        type="text"
+                        id="startDate"
+                        name="startDate"
+                        v-model="startDate"
+                    />
+                    <label for="endDate">End Date:</label>
+                    <input
+                        type="text"
+                        id="endDate"
+                        name="endDate"
+                        v-model="endDate"
+                    />
+                </div>
+            </div>
+        `,
+        data: function () {
+            return {
+                startDate: '',
+                endDate: ''
+            }
+        },
+        methods: {
+            select: function () {
+                let dates = {
+                    startDate: this.startDate,
+                    endDate: this.endDate
+                }
+                this.$emit('select', dates)
+            }
+        }
+    })
+
+    Vue.component('activity-table', {
+        props: ['activities'],
+        template: `
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Account</th>
+                    <th scope="col">When</th>
+                    <th scope="col">Detail</th>
+                    <th scope="col">Operations</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="activity in activities">
+                        <td>{{activity.name}}</td>
+                        <td>{{activity.money}}</td>
+                        <td>{{activity.account}}</td>
+                        <td>{{activity.createtime}}</td>
+                        <td>{{activity.description}}</td>
+                        <td>
+                            <a
+                                class="btn btn-primary"
+                                role="button"
+                                href=""
+                                @click.prevent="$emit('edit-activity', activity.id)"
+                            >
+                                Edit
+                            </a>
+                            <a
+                                class="btn btn-danger"
+                                role="button"
+                                href=""
+                                @click.prevent="$emit('delete-activity', activity.id)"
+                            >
+                                Delete
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        `
+    })
+
+    const FormRow = {
+        props: ['label', 'value'],
+        template: `
+            <div class="form-group row">
+                <label :for="label" class="col-sm-2 col-form-label"
+                >{{label}}</label>
+                <div class="col-sm-10">
+                    <input
+                        type="text"
+                        class="form-control"
+                        :id="label"
+                        :name="label"
+                        :value="value"
+                        v-on:input="$emit('input', $event.target.value)"
+                    />
+                </div>
+            </div>
+        `
+    }
+
+    Vue.component('activity-form', {
+        props: ['activity'],
+        template: `
+            <form v-on:action="" method="POST">
+                <div :class="idLabelClass">
+                    <label class="col-sm-2 col-form-label"
+                    >ID</label
+                    >
+                    <div class="col-sm-10">
+                        <input
+                                type="text"
+                                readonly
+                                class="form-control-plaintext"
+                                name="id"
+                                :value="activity.id"
+                        />
+                    </div>
+                </div>
+                <form-row label="Name" v-model="activity.name"></form-row>
+                <form-row label="Money" v-model="activity.money"></form-row>
+                <form-row label="Account" v-model="activity.account"></form-row>
+                <form-row label="When" v-model="activity.createtime"></form-row>
+                <form-row label="Description" v-model="activity.description"></form-row>
+                <div class="form-group row">
+                    <div class="col-sm-5">
+                        <input
+                                type="submit"
+                                class="form-control"
+                                id="submit"
+                                :value="buttonText"
+                                @click.prevent="submit()"
+                        />
+                    </div>
+                    <div class="col-sm-5">
+                        <a class="btn btn-primary" href="" role="button" @click.prevent="$emit('back')">Back</a>
+                    </div>
+                </div>
+            </form>
+        `,
+        components: {
+            'form-row': FormRow
+        },
+        methods: {
+            submit: function () {
+                this.$emit('update-activity', this.activity)
+            }
+        },
+        computed: {
+            idLabelClass: function () {
+                return this.activity.id === 0 ? 'd-none' : 'form-group row';
+            },
+            buttonText: function () {
+                return this.activity.id === 0 ? 'Add' : 'Update'
+            }
+        }
+    })
+
+    const app = new Vue({
+        el: '#app',
+        data: {
+            activities: [],
+            page: 'main',
+            editActivity: null
+        },
+        methods: {
+            pageClass: function (page) {
+                return this.page === page ? '' : 'd-none'
+            },
+            back: function () {
+                this.editActivity = null
+                this.page = 'main'
+            },
+            selectAll: async function () {
+                try {
+                    let response = await axios.get('selectAll')
+                    this.activities = response.data
+                } catch (err) {
+                    alert(err)
+                }
+            },
+            select: async function (dates) {
+                try {
+                    let response = await axios.get('select', {
+                        params: dates
+                    })
+                    this.activities = response.data
+                } catch (err) {
+                    alert(err)
+                }
+            },
+            addActivity: function () {
+                this.page = 'activity'
+            },
+            editActivityById: async function (id) {
+                try {
+                    let response = await axios.get('edit', {
+                        params: {id}
+                    })
+                    this.editActivity = response.data
+                    this.page = 'activity'
+                } catch (err) {
+                    alert(err)
+                }
+            },
+            updateActivity: async function (activity) {
+                let method = ''
+                if (activity.id === 0) {
+                    delete activity.id;
+                    method = 'add'
+                } else {
+                    method = 'update'
+                }
+                try {
+                    await axios.get(method, {
+                        params: activity
+                    })
+                    await this.selectAll()
+                    this.page = 'main'
+                } catch (err) {
+                    alert(err)
+                }
+            },
+            deleteActivityById: async function (id) {
+                try {
+                    await axios.get('delete', {
+                        params: {id}
+                    })
+                    await this.selectAll()
+                } catch (err) {
+                    alert(err)
+                }
+            }
+        },
+        computed: {
+            editing: function () {
+                if (this.editActivity) {
+                    return this.editActivity
+                }
+                return {
+                    id: 0,
+                    name: '',
+                    money: '',
+                    account: '',
+                    createtime: '',
+                    description: ''
+                }
+            }
+        },
+        beforeMount() {
+            this.selectAll()
+        }
+    })
+</script>
+</html>
